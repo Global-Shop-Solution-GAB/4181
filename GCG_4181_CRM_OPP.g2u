@@ -1,0 +1,347 @@
+Program.Sub.ScreenSU.Start
+Gui.F_Opportunity..create
+Gui.F_Opportunity..caption("Opportunity")
+Gui.F_Opportunity..size(3570,2565)
+Gui.F_Opportunity..position(0,0)
+Gui.F_Opportunity..event(UnLoad,opp_unload)
+Gui.F_Opportunity..forecolor(0)
+Gui.F_Opportunity..fontstyle(,)
+Gui.F_Opportunity..BackColor(-2147483633)
+Gui.F_Opportunity..maxbutton(False)
+Gui.F_Opportunity..mousepointer(0)
+Gui.F_Opportunity..sizeable(False)
+Gui.F_Opportunity..MinX(0)
+Gui.F_Opportunity..MinY(0)
+Gui.F_Opportunity..MinButton(False)
+Gui.F_Opportunity.frameOpp.create(frame)
+Gui.F_Opportunity.frameOpp.caption("Select Opportunity ID")
+Gui.F_Opportunity.frameOpp.size(2145,1005)
+Gui.F_Opportunity.frameOpp.position(635,155)
+Gui.F_Opportunity.txtOpp.create(textbox,"",True,1215,300,0,260,395,False,0,"Arial",8,-2147483643,1)
+Gui.F_Opportunity.txtOpp.text("")
+Gui.F_Opportunity.txtOpp.parent("frameOpp")
+Gui.F_Opportunity.cmdOpp.create(button)
+Gui.F_Opportunity.cmdOpp.caption("^")
+Gui.F_Opportunity.cmdOpp.size(330,330)
+Gui.F_Opportunity.cmdOpp.position(1590,375)
+Gui.F_Opportunity.cmdOpp.parent("frameOpp")
+Gui.F_Opportunity.cmdOpp.event(Click,cmdopp_click)
+Gui.F_Opportunity.frameTool.create(frame)
+Gui.F_Opportunity.frameTool.size(3045,705)
+Gui.F_Opportunity.frameTool.position(190,1215)
+Gui.F_Opportunity.cmdSave.create(button)
+Gui.F_Opportunity.cmdSave.caption("Save")
+Gui.F_Opportunity.cmdSave.size(855,375)
+Gui.F_Opportunity.cmdSave.position(2075,200)
+Gui.F_Opportunity.cmdSave.parent("frameTool")
+Gui.F_Opportunity.cmdSave.event(Click,cmdSave_Click)
+Gui.F_Opportunity.cmdNew.create(button)
+Gui.F_Opportunity.cmdNew.caption("New")
+Gui.F_Opportunity.cmdNew.size(855,375)
+Gui.F_Opportunity.cmdNew.position(140,200)
+Gui.F_Opportunity.cmdNew.parent("frameTool")
+Gui.F_Opportunity.cmdNew.event(Click,cmdNew_Click)
+Gui.F_Opportunity.cmdDelete.create(button)
+Gui.F_Opportunity.cmdDelete.caption("Unlink")
+Gui.F_Opportunity.cmdDelete.size(855,375)
+Gui.F_Opportunity.cmdDelete.position(1100,200)
+Gui.F_Opportunity.cmdDelete.parent("frameTool")
+Gui.F_Opportunity.cmdDelete.event(Click,cmdDelete_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.sScreen.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+	'Launch CRM Create Opp from Script Button.
+	'10710 Quote Populate
+	'10960 Quote Script 1
+	'11560 Order Header Populate
+	'11910 Order Header Script 1
+	V.Local.sSQL.Declare(String)
+	
+	F.ODBC.Connection!Conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+	
+	F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+	
+		F.Intrinsic.Control.CaseAny(10710,11560)
+			F.Intrinsic.Control.If(V.Caller.Switches,<>,"O")
+				F.Intrinsic.UI.ChangeCallerProperty(V.Passed.000201,"LOCK",1)
+			F.Intrinsic.Control.EndIf
+			
+			V.Passed.000201.Set("Opportunity")
+			F.Intrinsic.Control.CallSub(Opp_unload)
+			
+		F.Intrinsic.Control.Case(10960)
+			V.Global.sScreen.Set("Q")
+			
+		F.Intrinsic.Control.Case(11910)
+			V.Global.sScreen.Set("O")
+			
+	F.Intrinsic.Control.EndSelect
+
+	
+	F.Intrinsic.Control.If(V.Passed.000003,=,"")
+		F.Intrinsic.Control.CallSub(Opp_unload)
+	F.Intrinsic.Control.EndIf	
+	
+	F.Intrinsic.Control.If(V.Global.sScreen,=,"Q")
+		F.Intrinsic.String.Build("SELECT OID FROM CRM_OPP_Master WHERE Quote = '{0}'",V.Passed.000003,V.Local.sSQL)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("SELECT OID FROM CRM_OPP_Master WHERE SalesOrder ='{0}'",V.Passed.000003,V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Connection!Conx.OpenRecordsetRO("rstOpp",V.Local.sSQL)
+	
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstOpp.EOF,=,False)
+		Gui.F_Opportunity.txtOpp.Text(V.ODBC.Conx!rstOpp.FieldValTrim!OID)
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Conx!rstOpp.Close
+			
+	Gui.F_Opportunity..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.opp_unload.Start
+F.Intrinsic.Control.Try
+
+	F.ODBC.Connection!Conx.Close
+	F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.opp_unload.End
+
+Program.Sub.cmdopp_click.Start
+F.Intrinsic.Control.Try
+	V.Local.sColumnWidths.Declare(String)
+	V.Local.sColumnTitles.Declare(String)
+	V.Local.sBrowserResult.Declare(String)
+	V.Local.sSQL.Declare(String)
+	V.Local.sCustomerNumber.Declare(String)
+	V.Local.sFormat.Declare(String)
+	
+	'Store Browser Column titles into titles array
+	F.Intrinsic.String.Split("OPP DESCRIPTION*!*OPP ID*!*ASSIGN*!*REVENUE*!*CLOSE DATE","*!*",V.Local.sColumnTitles)
+	'Store Browser Column widths into array
+	F.Intrinsic.String.Split("3000*!*1000*!*1000*!*1000*!*1000","*!*",V.Local.sColumnWidths)
+	F.Intrinsic.String.Split("*!**!**!*currency*!*long","*!*",V.Local.sFormat)
+	
+	V.Local.sCustomerNumber.Set(V.Passed.000006.Trim)
+	
+	F.Intrinsic.Control.If(V.Caller.Hook,=,"10960")
+		F.Intrinsic.String.Build("SELECT ODesc, OID, Int_Assign, ORevenue, OProjCloseDate FROM CRM_OPP_Master WHERE CompID= '{0}' AND (Quote= '' OR Quote IS NULL) ORDER BY ODesc",V.Local.sCustomerNumber,V.Local.sSQL)
+	F.Intrinsic.Control.ElseIf(V.Caller.Hook,=,"11910")
+		F.Intrinsic.String.Build("SELECT ODesc, OID, Int_Assign, ORevenue, OProjCloseDate FROM CRM_OPP_Master WHERE CompID= '{0}' AND (SalesOrder= '' OR SalesOrder IS NULL) ORDER BY ODesc",V.Local.sCustomerNumber,V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+	
+	'Execute GAB Browser
+	F.Intrinsic.UI.Browser("Select Opportunity","conx",V.Local.sSQL,V.Local.sColumnTitles,V.Local.sColumnWidths,V.Local.sBrowserResult)
+	
+	'Check result to see if screen should be set or if the browser was closed without selecting a row
+	F.Intrinsic.Control.If(V.Local.sBrowserResult.UCase,!=,"***CANCEL***")	
+		F.Intrinsic.String.Split(V.Local.sBrowserResult,"*!*",V.Local.sBrowserResult)
+		Gui.F_Opportunity.txtOpp.Text(V.Local.sBrowserResult(1))		
+	F.Intrinsic.Control.EndIf
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdopp_click.End
+
+Program.Sub.cmdNew_Click.Start
+F.Intrinsic.Control.Try
+	V.Local.sCustomerID.Declare(String)
+	V.Local.sCRMElements.Declare(String)
+	V.Local.sCustomerType.Declare(String,"15")
+	V.Local.sSQL.Declare(String)
+	V.Local.iOldHighestOID.Declare(Long)
+	V.Local.iNewHighestOID.Declare(Long)
+	V.Local.iCRMPID.Declare(Long)
+	V.Local.bCRMRunning.Declare(Boolean, True)
+	
+	F.Intrinsic.Control.CallSub(DisableScreenButtons)
+	
+	'V.Passed.000006 = Customer ID
+	F.Intrinsic.String.RPad(V.Passed.000006," ",6,V.Local.sCustomerID)
+	
+	'Quotes can be created for both customers and prospects, so if we are called from quote script 1 then we need
+	'to check to see if we are dealing with a prospect and change the customer type accordingly
+	F.Intrinsic.Control.If(V.Caller.Hook,=,10960)
+		F.Intrinsic.Control.If(V.Passed.Prosp-Flag,=,"P")
+			V.Local.sCustomerType.Set("18")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	
+	'Store the current highest OID for the customer. If this changes after CRM is closed then we know a new opportunity was selected
+	'and we will set the screen to that opportunity ID. If it doesn't change then we know CRM was closed without a new opportunity
+	'having been created.
+	F.Intrinsic.String.Build("SELECT TOP 1 OID FROM CRM_OPP_Master WHERE CompID = '{0}' ORDER BY OID DESC",V.Local.sCustomerID,V.Local.sSQL)
+	F.ODBC.Connection!Conx.OpenLocalRecordSetRO("rstTopOID",V.Local.sSQL)
+	
+	'If a value is returned we store it in iOldHighestOID, otherwise we store 0
+	F.Intrinsic.Control.Iif(V.ODBC.Conx!rstTopOID.EOF,=,False,V.ODBC.Conx!rstTopOID.FieldValLong!OID,0,V.Local.iOldHighestOID)
+	
+	F.ODBC.Conx!rstTopOID.Close
+	
+	'Launch CRM screen
+	F.Intrinsic.String.Build("MODE::2*!*COMPANY-NUMBER::{0}*!*COMPANY-TYPE::{1}",V.Local.sCustomerID,V.Local.sCustomerType,V.Local.sCRMElements)	
+	F.Global.CRM.Invoke(V.Local.sCRMElements, V.Local.iCRMPID)
+	
+	'Loop until CRM.exe is no longer running to wait to save until CRM is complete
+	F.Intrinsic.Control.DoUntil(V.Local.bCRMRunning.Not)
+		F.Intrinsic.UI.Sleep(1)
+		F.Intrinsic.Task.IsProgramRunning("CRM",V.Local.bCRMRunning)
+	F.Intrinsic.Control.Loop
+	
+	F.Intrinsic.Control.CallSub(EnableScreenButtons)
+	
+	F.Intrinsic.String.Build("SELECT TOP 1 OID FROM CRM_OPP_Master WHERE CompID = '{0}' ORDER BY OID DESC",V.Local.sCustomerID,V.Local.sSQL)
+	F.ODBC.Connection!Conx.OpenLocalRecordSetRO("rstTopOID",V.Local.sSQL)
+	
+	F.Intrinsic.Control.Iif(V.ODBC.Conx!rstTopOID.EOF,=,False,V.ODBC.Conx!rstTopOID.FieldValLong!OID,0,V.Local.iNewHighestOID)
+	
+	F.ODBC.Conx!rstTopOID.Close
+	
+	F.Intrinsic.Control.If(V.Local.iNewHighestOID,>,V.Local.iOldHighestOID)
+		Gui.F_Opportunity.txtOpp.Text(V.Local.iNewHighestOID)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.UI.Msgbox("New opportunity not found. If it was created please use the browser to select it.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.CallSub(cmdSave_Click)
+	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdNew_Click.End
+
+Program.Sub.cmdSave_Click.Start
+F.Intrinsic.Control.Try
+	'Check for existing links
+	V.Local.sSQL.Declare(String)
+	'Check for Order or Quote then delete association
+	F.Intrinsic.Control.CallSub(cmdDelete_Click)
+	
+	F.Intrinsic.String.Build("SELECT OID, Quote, SalesOrder FROM CRM_OPP_Master WHERE OID = '{0}'",V.Screen.F_Opportunity!txtOpp.Text,V.Local.sSQL)
+	'Save sales order or quote #
+	F.ODBC.Connection!Conx.OpenRecordsetRW("rstOpp",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstOpp.EOF,=,False)
+		F.Intrinsic.Control.If(V.Screen.F_Opportunity!txtOpp.Text,<>,"")
+		
+			F.Intrinsic.Control.If(V.Global.sScreen,=,"O")
+				F.ODBC.Conx!rstOpp.Set!SalesOrder(V.Passed.000003)
+			F.Intrinsic.Control.ElseIf(V.Global.sScreen,=,"Q")
+				F.ODBC.Conx!rstOpp.Set!Quote(V.Passed.000003)
+			F.Intrinsic.Control.EndIf
+			
+			F.ODBC.Conx!rstOpp.Update
+			
+		F.Intrinsic.Control.Else
+			F.Intrinsic.UI.Msgbox("Please choose valid opportunity.","Invalid Opportunity")			
+		F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.Control.Else
+		F.Intrinsic.UI.Msgbox("Please choose valid opportunity.","Invalid Opportunity")		
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Conx!rstOpp.Close
+	
+	F.Intrinsic.Control.CallSub(Opp_unload)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.cmdDelete_Click.Start
+F.Intrinsic.Control.Try
+	V.Local.sSQL.Declare(String)
+	'Check for Order or Quote then delete association
+	
+	F.Intrinsic.Control.If(V.Global.sScreen,=,"O")
+		F.Intrinsic.String.Build("SELECT OID, Quote, SalesOrder FROM CRM_OPP_Master WHERE SalesOrder = '{0}'",V.Passed.000003,V.Local.sSQL)
+	F.Intrinsic.Control.ElseIf(V.Global.sScreen,=,"Q")
+		F.Intrinsic.String.Build("SELECT OID, Quote, SalesOrder FROM CRM_OPP_Master WHERE Quote = '{0}'",V.Passed.000003,V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Connection!Conx.OpenRecordsetRW("RSTOPP",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.ODBC.Conx!RSTOPP.EOF,=,False)
+	
+		F.Intrinsic.Control.If(V.Global.sScreen,=,"O")
+			F.ODBC.Conx!RSTOPP.Set!SalesOrder("")	
+		F.Intrinsic.Control.ElseIf(V.Global.sScreen,=,"Q")
+			F.ODBC.Conx!RSTOPP.Set!Quote("")	
+		F.Intrinsic.Control.EndIf
+		
+		F.Intrinsic.Control.If(V.ODBC.Conx!rstOpp.FieldValTrim!OID,=,V.Screen.F_Opportunity!txtOpp.Text)
+			Gui.F_Opportunity.txtOpp.Text("")
+		F.Intrinsic.Control.EndIf
+		
+		F.ODBC.Conx!RSTOPP.Update
+		
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Conx!RSTOPP.Close
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdDelete_Click.End
+
+Program.Sub.DisableScreenButtons.Start
+F.Intrinsic.Control.Try
+	Gui.F_Opportunity.cmdDelete.Enabled(False)
+	Gui.F_Opportunity.cmdNew.Enabled(False)
+	Gui.F_Opportunity.cmdOpp.Enabled(False)
+	Gui.F_Opportunity.cmdSave.Enabled(False)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.DisableScreenButtons.End
+
+Program.Sub.EnableScreenButtons.Start
+F.Intrinsic.Control.Try
+	Gui.F_Opportunity.cmdDelete.Enabled(True)
+	Gui.F_Opportunity.cmdNew.Enabled(True)
+	Gui.F_Opportunity.cmdOpp.Enabled(True)
+	Gui.F_Opportunity.cmdSave.Enabled(True)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError,"Sub",V.Ambient.CurrentSubroutine,"Error",V.Ambient.ErrorNumber,"ErrorDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.EnableScreenButtons.End
+
+Program.Sub.CatchError.Start
+F.Intrinsic.Control.Try
+	V.Local.sErrorMessage.Declare(String)
+	
+	F.Intrinsic.String.Build("Program: GCG_4181_CRM_OPP.g2u{0}{0}Sub: {1}{0}Error: {2}{0}Error Description: {3}",V.Ambient.NewLine,V.Args.Sub,V.Args.Error,V.Args.ErrorDescription,V.Local.sErrorMessage)
+	F.Intrinsic.UI.Msgbox(V.Local.sErrorMessage,"Unhandled Error Occurred")
+	
+	F.Intrinsic.Control.If(V.Args.Sub.UCase,!=,"OPP_UNLOAD")
+		F.Intrinsic.Control.CallSub(OPP_Unload)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Catch
+	F.Intrinsic.UI.Msgbox("Fatal Error occurred in program GCG_4181_CRM_OPP.g2u","Unhandled Error Occurred")
+F.Intrinsic.Control.EndTry	
+Program.Sub.CatchError.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_4181_CRM_OPP$}$BCC$}$8/1/2016
+${$1$}$$}$$}$1$}$11910$}$OES0200A-SCRIPT-1-HOOK?$}$8/1/2016 10:42:09 AM$}$(Program: ORD200; Screen: OES0200A)
+
+${$1$}$$}$$}$0$}$11910$}$OES0200A-SCRIPT-1-HOOK?$}$8/1/2016 10:41:19 AM$}$(Program: ORD200; Screen: OES0200A)
+
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$This custom project allows the user to link a Sales Order to an opportunity via the Sales Order screen's script 1 button.
+${$4$}$0$}$$}$0$}$-1$}$BCC$}$8/1/2016 10:43:26 AM$}$Added in some error handling so that the user knows if something went wrong.
+Program.Sub.Comments.End
